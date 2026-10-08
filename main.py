@@ -130,7 +130,7 @@ class MessengerApp(App):
 
     # ---------- подключение ----------
     def set_status(self, text):
-        self.root.get_screen("connect").ids.status.text = text
+        self.root.ids.status.text = text
 
     def start_host(self, nick, port):
         try:
@@ -173,6 +173,14 @@ class MessengerApp(App):
         Clock.schedule_once(lambda dt: self.handle(ev))
 
     def handle(self, ev):
+        try:
+            self._handle(ev)
+        except Exception as e:  # не даём приложению вылетать
+            import traceback
+            traceback.print_exc()
+            self.set_status(f"Ошибка: {e}")
+
+    def _handle(self, ev):
         t = ev.get("type")
         if t == "welcome":
             self.my_nick = ev["nick"]
@@ -194,7 +202,7 @@ class MessengerApp(App):
                 self.add_line("[color=ff6666]Соединение потеряно[/color]")
 
     def refresh_info(self):
-        ids = self.root.get_screen("chat").ids
+        ids = self.root.ids
         text = f"{self.my_nick} | онлайн: {len(self.users)}"
         if self.server:
             text += f" | сервер: {self.host_ip}:{self.server.port}"
@@ -212,7 +220,7 @@ class MessengerApp(App):
 
     def add_line(self, markup):
         self.lines.append(markup)
-        ids = self.root.get_screen("chat").ids
+        ids = self.root.ids
         ids.log.text = "\n".join(self.lines)
         Clock.schedule_once(lambda dt: setattr(ids.scroll, "scroll_y", 0), 0.05)
 
@@ -236,7 +244,13 @@ class MessengerApp(App):
         self.set_status("")
 
     def on_stop(self):
-        self.leave()
+        try:
+            if self.client:
+                self.client.close()
+            if self.server:
+                self.server.stop()
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":
