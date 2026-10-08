@@ -64,6 +64,10 @@ class ChatServer:
                 conn, _ = self.sock.accept()
             except OSError:
                 break
+            try:
+                conn.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+            except OSError:
+                pass
             threading.Thread(target=self._handle, args=(conn,), daemon=True).start()
 
     @staticmethod

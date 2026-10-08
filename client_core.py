@@ -12,8 +12,10 @@ class ChatClient:
         self.alive = False
 
     def connect(self, host, port, nick):
-        self.sock = socket.create_connection((host, port), timeout=5)
+        self.sock = socket.create_connection((host, port), timeout=10)
         self.sock.settimeout(None)
+        # keepalive, чтобы NAT/роутеры не рвали «молчащее» соединение
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         self.alive = True
         self._send({"type": "join", "nick": nick})
         threading.Thread(target=self._reader, daemon=True).start()
